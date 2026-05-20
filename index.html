@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f5f5f5">
+<title>funkentechno — albums he's been spinning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f5f5;
+    --ink: #0a0a0a;
+    --soft: #888;
+    --rule: #e2e2e2;
+    --link-underline: #c4c4c4;
+    --placeholder: #ebebeb;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter Tight', -apple-system, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100vh;
+    padding: 56px 32px 96px;
+  }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  header { margin-bottom: 64px; }
+
+  h1 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  h1 a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--link-underline);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  h1 a:hover { text-decoration-color: var(--ink); }
+
+  h1 .by {
+    color: var(--soft);
+    font-weight: 400;
+  }
+
+  .intro {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 520px;
+  }
+
+  .intro .soft { color: var(--soft); }
+
+  .intro a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--link-underline);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  .intro a:hover { text-decoration-color: var(--ink); }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 32px;
+    margin-top: 64px;
+  }
+
+  .feed {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .album {
+    padding: 32px 0;
+    border-top: 1px solid var(--rule);
+    opacity: 0;
+    transform: translateY(4px);
+    animation: rise 0.4s ease-out forwards;
+    display: grid;
+    grid-template-columns: 144px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .album:first-child { border-top: none; padding-top: 0; }
+
+  .album:nth-child(1) { animation-delay: 0.04s; }
+  .album:nth-child(2) { animation-delay: 0.08s; }
+  .album:nth-child(3) { animation-delay: 0.12s; }
+  .album:nth-child(4) { animation-delay: 0.16s; }
+  .album:nth-child(5) { animation-delay: 0.20s; }
+  .album:nth-child(6) { animation-delay: 0.24s; }
+  .album:nth-child(7) { animation-delay: 0.28s; }
+  .album:nth-child(8) { animation-delay: 0.32s; }
+  .album:nth-child(9) { animation-delay: 0.36s; }
+  .album:nth-child(10) { animation-delay: 0.40s; }
+
+  @keyframes rise {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .cover-link {
+    display: block;
+    width: 144px;
+    height: 144px;
+    background: var(--placeholder);
+    position: relative;
+    overflow: hidden;
+    transition: opacity 0.15s;
+  }
+
+  .cover-link:hover { opacity: 0.85; }
+
+  .cover-link img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .info {
+    padding-top: 4px;
+  }
+
+  .title-line {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    letter-spacing: -0.005em;
+  }
+
+  .slug {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--soft);
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  .note {
+    font-size: 16px;
+    color: var(--ink);
+    line-height: 1.5;
+    max-width: 540px;
+  }
+
+  .links {
+    margin-top: 14px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .link {
+    font-size: 14px;
+    color: var(--soft);
+    text-decoration: underline;
+    text-decoration-color: var(--link-underline);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    transition: color 0.15s, text-decoration-color 0.15s;
+  }
+
+  .link:hover {
+    color: var(--ink);
+    text-decoration-color: var(--ink);
+  }
+
+  .link .arrow {
+    font-size: 11px;
+    margin-left: 2px;
+  }
+
+  footer {
+    margin-top: 96px;
+    padding-top: 24px;
+    font-size: 14px;
+    color: var(--soft);
+  }
+
+  footer a {
+    color: var(--soft);
+    text-decoration: underline;
+    text-decoration-color: var(--link-underline);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  footer a:hover {
+    color: var(--ink);
+    text-decoration-color: var(--ink);
+  }
+
+  .dot { margin: 0 8px; color: var(--link-underline); }
+
+  @media (max-width: 600px) {
+    body { padding: 40px 20px 64px; }
+    .album {
+      grid-template-columns: 96px 1fr;
+      gap: 20px;
+      padding: 24px 0;
+    }
+    .cover-link { width: 96px; height: 96px; }
+    .links { gap: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><a href="https://vincentvenema.com/davidjames/#">funkentechno</a> <span class="by">by David James</span></h1>
+    <p class="intro">
+      A reading list of recent album mentions from <a href="https://x.com/funkentechno" target="_blank" rel="noopener">@funkentechno</a> on X.<br>
+      <span class="soft">Each entry links through to Bandcamp and Spotify.</span>
+    </p>
+  </header>
+
+  <div class="section-title">Recent picks</div>
+
+  <main class="feed" id="feed"></main>
+
+  <footer>
+    <a href="https://x.com/funkentechno" target="_blank" rel="noopener">@funkentechno</a>
+    <span class="dot">·</span>
+    <a href="https://mixcloud.com/OptimisticUnderground/" target="_blank" rel="noopener">Mixcloud</a>
+    <span class="dot">·</span>
+    <span class="soft">artwork via bandcamp</span>
+  </footer>
+
+</div>
+
+<script>
+// edit this list to update the feed
+const albums = [
+  {
+    artist: "Traumprinz",
+    album: "Life",
+    note: "Surprise drop on Bandcamp, digital and vinyl. Another banger from the master, copies going fast.",
+    date: "May 2026",
+    bandcamp: "https://allpossibleworlds.bandcamp.com/album/life",
+    cover: "https://f4.bcbits.com/img/a3352904650_5.jpg"
+  },
+  {
+    artist: "Skee Mask",
+    album: "F",
+    note: "Free name-your-price release. His b-sides outclass most peers' proper albums.",
+    date: "Mar 2026",
+    bandcamp: "https://skeemask.bandcamp.com/album/f",
+    cover: "https://f4.bcbits.com/img/a0107665006_5.jpg"
+  },
+  {
+    artist: "Shinichi Atobe",
+    album: "Silent Way",
+    note: "Most anticipated album of the year. Picks up right where Discipline left off, heading for heavy rotation.",
+    date: "Mar 2026",
+    bandcamp: "https://plasticandsounds.bandcamp.com/album/silent-way",
+    cover: "https://f4.bcbits.com/img/a0577832691_5.jpg"
+  },
+  {
+    artist: "Foote / Dickow",
+    album: "High Cube",
+    note: "On Geographic North. For fans of Peak Oil and anyone who loved Smoke Point a couple years back.",
+    date: "Mar 2026",
+    bandcamp: "https://foote-dickow.bandcamp.com/album/high-cube",
+    cover: "https://f4.bcbits.com/img/a1161239346_5.jpg"
+  },
+  {
+    artist: "Deadbeat",
+    album: "Kansai Botanicals",
+    note: "Dub techno mainstay on Quiet Details. An amorphous ambient excursion, signature atmosphere and depth-charge bass.",
+    date: "Feb 2026",
+    bandcamp: "https://quietdetails.bandcamp.com/album/kansai-botanicals",
+    cover: "https://f4.bcbits.com/img/a2006662582_5.jpg"
+  },
+  {
+    artist: "Anthony Naples",
+    album: "In Studio Magic",
+    note: "Atmospheric, organic territory rather than dancefloor. Perfect vibes, a reason to hold off on year-end lists.",
+    date: "Dec 2025",
+    bandcamp: "https://anthonynaples.bandcamp.com/album/in-studio-magic",
+    cover: "https://f4.bcbits.com/img/a0736921771_5.jpg"
+  },
+  {
+    artist: "Los Thuthanaka",
+    album: "Los Thuthanaka",
+    note: "His 8 year old son goes apeshit for this. Proof kids don't need children's music, they just want good music.",
+    date: "Mar 2025",
+    bandcamp: "https://losthuthanaka.bandcamp.com/album/los-thuthanaka-2",
+    cover: "https://f4.bcbits.com/img/a4178418448_5.jpg"
+  },
+  {
+    artist: "DOVS",
+    album: "Psychic Geography",
+    note: "Superb. One of his favourites of the year so far.",
+    date: "Jan 2025",
+    bandcamp: "https://balmat.bandcamp.com/album/psychic-geography",
+    cover: "https://f4.bcbits.com/img/a2866755047_5.jpg"
+  },
+  {
+    artist: "Jan Jelinek",
+    album: "Loop-Finding-Jazz-Records",
+    note: "One of the purest albums, finally owned. A personal holy grail, thankful for good mail days.",
+    date: "Feb 2024",
+    bandcamp: "https://janjelinek.bandcamp.com/album/loop-finding-jazz-records",
+    cover: "https://f4.bcbits.com/img/a0750392873_5.jpg"
+  }
+];
+
+function spotifySearch(artist, album) {
+  return `https://open.spotify.com/search/${encodeURIComponent(artist + ' ' + album)}`;
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function slug(artist, album) {
+  const s = (artist + '/' + album).toLowerCase().replace(/[^a-z0-9\/]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return 'x.com/funkentechno/' + s;
+}
+
+function render() {
+  const feed = document.getElementById('feed');
+  feed.innerHTML = albums.map((a) => `
+    <article class="album">
+      <a class="cover-link" href="${escapeHtml(a.bandcamp)}" target="_blank" rel="noopener" aria-label="${escapeHtml(a.artist)} - ${escapeHtml(a.album)}">
+        <img src="${escapeHtml(a.cover)}" alt="${escapeHtml(a.artist)} - ${escapeHtml(a.album)}" loading="lazy">
+      </a>
+      <div class="info">
+        <div class="title-line">${escapeHtml(a.artist)} / ${escapeHtml(a.album)}</div>
+        <div class="slug">${escapeHtml(slug(a.artist, a.album))} · ${escapeHtml(a.date)}</div>
+        <p class="note">${escapeHtml(a.note)}</p>
+        <div class="links">
+          <a class="link" href="${escapeHtml(a.bandcamp)}" target="_blank" rel="noopener">
+            Bandcamp <span class="arrow">↗︎</span>
+          </a>
+          <a class="link" href="${spotifySearch(a.artist, a.album)}" target="_blank" rel="noopener">
+            Spotify <span class="arrow">↗︎</span>
+          </a>
+        </div>
+      </div>
+    </article>
+  `).join('');
+}
+
+render();
+</script>
+</body>
+</html>

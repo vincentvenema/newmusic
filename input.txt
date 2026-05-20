@@ -1,0 +1,14 @@
+# funkentechno album feed - input
+# Format: bandcamp_url | note | date
+# Lines starting with # are ignored.
+# Add new entries at the top, oldest at the bottom.
+
+https://allpossibleworlds.bandcamp.com/album/life | Surprise drop on Bandcamp, digital and vinyl. Another banger from the master, copies going fast. | May 2026
+https://skeemask.bandcamp.com/album/f | Free name-your-price release. His b-sides outclass most peers' proper albums. | Mar 2026
+https://plasticandsounds.bandcamp.com/album/silent-way | Most anticipated album of the year. Picks up right where Discipline left off, heading for heavy rotation. | Mar 2026
+https://foote-dickow.bandcamp.com/album/high-cube | On Geographic North. For fans of Peak Oil and anyone who loved Smoke Point a couple years back. | Mar 2026
+https://quietdetails.bandcamp.com/album/kansai-botanicals | Dub techno mainstay on Quiet Details. An amorphous ambient excursion, signature atmosphere and depth-charge bass. | Feb 2026
+https://anthonynaples.bandcamp.com/album/in-studio-magic | Atmospheric, organic territory rather than dancefloor. Perfect vibes, a reason to hold off on year-end lists. | Dec 2025
+https://losthuthanaka.bandcamp.com/album/los-thuthanaka-2 | His 8 year old son goes apeshit for this. Proof kids don't need children's music, they just want good music. | Mar 2025
+https://balmat.bandcamp.com/album/psychic-geography | Superb. One of his favourites of the year so far. | Jan 2025
+https://janjelinek.bandcamp.com/album/loop-finding-jazz-records | One of the purest albums, finally owned. A personal holy grail, thankful for good mail days. | Feb 2024
