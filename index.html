@@ -500,12 +500,18 @@ const ALBUMS_FUNKENTECHNO = [
     "date": "Jan 2026"
   }
 ];
-const ALBUMS_LOBF = [];
-const ALBUMS_FIRSTFLOOR = [];
-const ALBUMS_FUTURISM = [];
+const ALBUMS_AQUARIUMDRUNKARD = [
+];
+const ALBUMS_LOBF = [
+];
+const ALBUMS_FIRSTFLOOR = [
+];
+const ALBUMS_FUTURISM = [
+];
 
 const SOURCES = [
   { id: 'FUNKENTECHNO', label: 'funkentechno', intro: 'Album mentions from @funkentechno on Bluesky.', albums: ALBUMS_FUNKENTECHNO },
+  { id: 'AQUARIUMDRUNKARD', label: 'Aquarium Drunkard', intro: 'Album reviews from Aquarium Drunkard.', albums: ALBUMS_AQUARIUMDRUNKARD },
   { id: 'LOBF', label: 'Line of Best Fit', intro: 'Album reviews from The Line of Best Fit.', albums: ALBUMS_LOBF },
   { id: 'FIRSTFLOOR', label: 'First Floor', intro: 'Recommended releases from First Floor by Shawn Reynaldo.', albums: ALBUMS_FIRSTFLOOR },
   { id: 'FUTURISM', label: 'Futurism Restated', intro: 'Recommended releases from Futurism Restated by Philip Sherburne.', albums: ALBUMS_FUTURISM }
@@ -556,8 +562,8 @@ function cardHtml(a) {
   const links = [];
   if (a.bandcamp) links.push(`<a class="link" href="${escapeHtml(a.bandcamp)}" target="_blank" rel="noopener">${IC_BANDCAMP}Bandcamp</a>`);
   if (a.url) links.push(`<a class="link" href="${escapeHtml(a.url)}" target="_blank" rel="noopener">Source <span class="arrow">↗︎</span></a>`);
-  links.push(`<a class="link" href="${searchUrl('https://open.spotify.com/search/', artist, album)}" target="_blank" rel="noopener">${IC_SPOTIFY}Spotify</a>`);
-  links.push(`<a class="link" href="${searchUrl('https://music.apple.com/search?term=', artist, album)}" target="_blank" rel="noopener">${IC_APPLE}Apple Music</a>`);
+  links.push(`<a class="link" href="${escapeHtml(a.spotify || searchUrl('https://open.spotify.com/search/', artist, album))}" target="_blank" rel="noopener">${IC_SPOTIFY}Spotify</a>`);
+  links.push(`<a class="link" href="${escapeHtml(a.apple || searchUrl('https://music.apple.com/search?term=', artist, album))}" target="_blank" rel="noopener">${IC_APPLE}Apple Music</a>`);
   return `
     <article class="album">
       <a class="cover-link" href="${escapeHtml(coverHref)}" target="_blank" rel="noopener" aria-label="${escapeHtml(alt)}">${cover}</a>

@@ -114,83 +114,153 @@ function normalizeUrl(u) {
   return u.split('?')[0].replace(/\/$/, '');
 }
 
-async function main() {
-  console.log(`Fetching @${HANDLE} posts back to ${SINCE.toISOString().slice(0, 10)}...`);
+// ---- generic helpers for per-source arrays in index.html ----
+function readArray(template, key) {
+  const re = new RegExp('const ALBUMS_' + key + ' = (\\[[\\s\\S]*?\\n\\]);');
+  const m = template.match(re);
+  if (!m) return null;
+  try { return JSON.parse(m[1]); } catch (e) { return null; }
+}
+
+function replaceArray(template, key, albums) {
+  const re = new RegExp('const ALBUMS_' + key + ' = (\\[[\\s\\S]*?\\n\\]);');
+  if (!re.test(template)) {
+    console.error(`  could not find ALBUMS_${key} in ${HTML_FILE}, leaving unchanged`);
+    return template;
+  }
+  const body = albums.length ? JSON.stringify(albums, null, 2) : '[\n]';
+  return template.replace(re, () => `const ALBUMS_${key} = ${body};`);
+}
+
+// ---- funkentechno (Bluesky) ----
+async function buildFunkentechno(existing) {
   const posts = await fetchPostsSince(SINCE);
-  console.log(`  ${posts.length} posts retrieved`);
-
-  const template = await readFile(HTML_FILE, 'utf-8');
-
-  const ALBUMS_RE = /const ALBUMS_FUNKENTECHNO = (\[[\s\S]*?\n\]);/;
-  const found = template.match(ALBUMS_RE);
-  if (!found) {
-    console.error('\nError: could not find const ALBUMS_FUNKENTECHNO array in index.html');
-    process.exit(1);
-  }
-
-  let existing = [];
-  try {
-    existing = JSON.parse(found[1]);
-  } catch (e) {
-    console.error('\nError: existing albums array is not valid JSON, aborting to avoid losing the archive:', e.message);
-    process.exit(1);
-  }
-
-  // Reuse metadata we already have so we don't refetch Bandcamp for known albums.
-  const byUrl = new Map(existing.map((a) => [normalizeUrl(a.bandcamp), a]));
-
+  const byUrl = new Map((existing || []).map((a) => [normalizeUrl(a.bandcamp), a]));
   const seen = new Set();
-  const albums = [];   // full 2026 list, newest first, rebuilt from the feed each run
-  let added = 0;
-
+  const albums = [];
   for (const post of posts) {
     const created = post?.record?.createdAt ? new Date(post.record.createdAt) : null;
-    if (!created || created < SINCE) continue;       // 2026 onward only
-
+    if (!created || created < SINCE) continue;
     const bcUrl = extractBandcampUrl(post);
     if (!bcUrl) continue;
-
     const normUrl = normalizeUrl(bcUrl);
     if (seen.has(normUrl)) continue;
     seen.add(normUrl);
-
-    if (byUrl.has(normUrl)) {
-      albums.push(byUrl.get(normUrl));               // already known, keep as is
-      continue;
-    }
-
-    process.stdout.write(`  ${normUrl} ... `);
+    if (byUrl.has(normUrl)) { albums.push(byUrl.get(normUrl)); continue; }
+    process.stdout.write(`  bandcamp ${normUrl} ... `);
     try {
-      await sleep(300);                               // be gentle with Bandcamp
+      await sleep(300);
       const meta = await fetchBandcampMeta(normUrl);
       const note = extractNote(post.record.text, meta.artist, meta.album);
       const date = formatDate(post.record.createdAt);
       albums.push({ ...meta, note, date });
-      added++;
       console.log('ok');
-    } catch (e) {
-      console.log(`failed (${e.message})`);
-    }
+    } catch (e) { console.log(`failed (${e.message})`); }
   }
-
-  if (albums.length === 0) {
-    console.log('\nNo 2026 albums found. Leaving index.html unchanged.');
-    return;
-  }
-
-  const json = JSON.stringify(albums, null, 2);
-  const updated = template.replace(ALBUMS_RE, () => `const ALBUMS_FUNKENTECHNO = ${json};`);
-
-  if (updated === template) {
-    console.log('\nNo changes. Archive already up to date.');
-    return;
-  }
-
-  await writeFile(HTML_FILE, updated);
-  console.log(`\n${albums.length} albums in 2026 (${added} newly fetched). Wrote ${HTML_FILE}`);
+  return albums;
 }
 
-main().catch(e => {
+// ---- Aquarium Drunkard (WordPress REST API) ----
+const AD_API = 'https://aquariumdrunkard.com/wp-json/wp/v2/posts';
+
+function decodeEntities(s) {
+  return String(s || '')
+    .replace(/&#8217;|&#8216;|&#0?39;|&#x27;/g, "'")
+    .replace(/&#8220;|&#8221;|&quot;/g, '"')
+    .replace(/&#8211;|&#8212;/g, '-')
+    .replace(/&#8230;/g, '…')
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ');
+}
+
+function stripHtml(s) {
+  return decodeEntities(String(s || '').replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+}
+
+async function fetchADPosts(sinceISO) {
+  const posts = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const url = `${AD_API}?per_page=100&_embed=1&orderby=date&order=desc&after=${encodeURIComponent(sinceISO)}&page=${page}`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'NewMusicFeed/1.0' } });
+    if (res.status === 400) break;            // page past the last
+    if (!res.ok) throw new Error(`AD API ${res.status}`);
+    const batch = await res.json();
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    posts.push(...batch);
+    if (batch.length < 100) break;
+  }
+  return posts;
+}
+
+function parseADPost(post) {
+  const content = (post.content && post.content.rendered) || '';
+  const spotify = (content.match(/https:\/\/open\.spotify\.com\/album\/[A-Za-z0-9]+/) || [])[0] || '';
+  const apple = (content.match(/https:\/\/music\.apple\.com\/[a-z]{2}\/album\/[^"'\s)]+/) || [])[0] || '';
+  const bandcamp = (content.match(/https:\/\/[\w-]+\.bandcamp\.com\/album\/[^"'\s)]+/) || [])[0] || '';
+  if (!spotify && !apple && !bandcamp) return null;           // not an album review
+
+  const title = stripHtml((post.title && post.title.rendered) || '');
+  const parts = title.split(/\s*::\s*/);
+  if (parts.length < 2) return null;                          // not the "Artist :: Album" format
+  const artist = parts[0].trim();
+  const album = parts.slice(1).join(' :: ').trim();
+  if (!artist || !album) return null;
+
+  let cover = '';
+  try { cover = post._embedded['wp:featuredmedia'][0].source_url || ''; } catch (e) { cover = ''; }
+
+  const note = stripHtml((post.excerpt && post.excerpt.rendered) || '')
+    .replace(/\s*\[?\s*…\s*\]?\s*$/, '')
+    .slice(0, 320);
+
+  const out = { artist, album, note, cover, date: formatDate(post.date), url: post.link || '' };
+  if (spotify) out.spotify = spotify;
+  if (apple) out.apple = apple;
+  if (bandcamp) out.bandcamp = bandcamp;
+  return out;
+}
+
+async function buildAquariumDrunkard() {
+  const posts = await fetchADPosts(SINCE.toISOString());
+  const seen = new Set();
+  const albums = [];
+  for (const post of posts) {
+    const a = parseADPost(post);
+    if (!a) continue;
+    const key = (a.url || a.spotify || a.apple).split('?')[0];
+    if (seen.has(key)) continue;
+    seen.add(key);
+    albums.push(a);
+  }
+  return albums;
+}
+
+// ---- orchestrate all sources, write index.html once ----
+async function main() {
+  let template = await readFile(HTML_FILE, 'utf-8');
+  let changed = false;
+
+  try {
+    console.log('funkentechno: fetching Bluesky...');
+    const existing = readArray(template, 'FUNKENTECHNO') || [];
+    const albums = await buildFunkentechno(existing);
+    if (albums.length) { template = replaceArray(template, 'FUNKENTECHNO', albums); changed = true; console.log(`  ${albums.length} albums`); }
+    else console.log('  no albums found, leaving unchanged');
+  } catch (e) { console.error('funkentechno failed:', e.message); }
+
+  try {
+    console.log('aquarium drunkard: fetching WordPress API...');
+    const albums = await buildAquariumDrunkard();
+    if (albums.length) { template = replaceArray(template, 'AQUARIUMDRUNKARD', albums); changed = true; console.log(`  ${albums.length} albums`); }
+    else console.log('  no albums found, leaving unchanged');
+  } catch (e) { console.error('aquarium drunkard failed:', e.message); }
+
+  if (!changed) { console.log('\nNo changes.'); return; }
+  await writeFile(HTML_FILE, template);
+  console.log(`\nWrote ${HTML_FILE}`);
+}
+
+main().catch((e) => {
   console.error('Error:', e.message);
   process.exit(1);
 });
