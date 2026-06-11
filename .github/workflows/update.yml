@@ -24,4 +24,25 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          gi
+          git add index.html
+          if git diff --staged --quiet; then
+            echo "No changes."
+          else
+            git commit -m "auto: refresh album feed"
+            git push
+          fi
+
+      - name: Stage site
+        run: |
+          mkdir -p dist
+          cp index.html dist/
+
+      - name: Deploy to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_TARGET_DIR }}
+          local-dir: ./dist/
+          protocol: ftps
