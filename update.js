@@ -132,14 +132,17 @@ async function main() {
 
   const template = await readFile(HTML_FILE, 'utf-8');
   const json = JSON.stringify(albums, null, 2);
-  const updated = template.replace(
-    /const albums = \[[\s\S]*?\n\];/,
-    `const albums = ${json};`
-  );
+  const ALBUMS_RE = /const albums = \[[\s\S]*?\n\];/;
+  if (!ALBUMS_RE.test(template)) {
+    console.error('\nError: could not find const albums array in index.html');
+    process.exit(1);
+  }
+
+  const updated = template.replace(ALBUMS_RE, `const albums = ${json};`);
 
   if (updated === template) {
-    console.error('\nWarning: could not find const albums array in index.html');
-    process.exit(1);
+    console.log('\nNo changes. Feed already up to date.');
+    return;
   }
 
   await writeFile(HTML_FILE, updated);
