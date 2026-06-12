@@ -226,6 +226,7 @@ function parseADPost(post) {
   if (!cover && !spotify && !apple && !bandcamp) return null; // skip text-only non-album posts
 
   let note = stripHtml((post.excerpt && post.excerpt.rendered) || '').replace(/\s*\[?\s*…\s*\]?\s*$/, '');
+  if (!note) { const y = post.yoast_head_json || {}; note = stripHtml(y.og_description || y.description || ''); }
   if (!note) note = stripHtml(content);
   note = snippet(note, 300);
 
