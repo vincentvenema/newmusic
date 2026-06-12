@@ -90,6 +90,13 @@
   }
   .cover-link:hover { opacity: 0.85; }
   .cover-link img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover-link.no-cover::after {
+    content: 'cover unavailable';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px; text-align: center;
+    font-size: 11px; color: var(--soft); letter-spacing: -0.01em;
+  }
 
   .info { padding-top: 4px; min-width: 0; }
   .title-line { font-size: 16px; font-weight: 500; margin-bottom: 2px; letter-spacing: -0.005em; overflow-wrap: anywhere; }
@@ -2071,8 +2078,8 @@ const SOURCES = [
   { id: 'FUNKENTECHNO', label: 'funkentechno', intro: 'Album mentions from @funkentechno on Bluesky.', albums: ALBUMS_FUNKENTECHNO },
   { id: 'AQUARIUMDRUNKARD', label: 'Aquarium Drunkard', intro: 'Album reviews from Aquarium Drunkard.', albums: ALBUMS_AQUARIUMDRUNKARD },
   { id: 'LOBF', label: 'Line of Best Fit', intro: 'Album reviews from The Line of Best Fit.', albums: ALBUMS_LOBF },
-  { id: 'FIRSTFLOOR', label: 'First Floor', intro: 'Recommended releases from First Floor by Shawn Reynaldo.', albums: ALBUMS_FIRSTFLOOR },
-  { id: 'FUTURISM', label: 'Futurism Restated', intro: 'Recommended releases from Futurism Restated by Philip Sherburne.', albums: ALBUMS_FUTURISM }
+  { id: 'FIRSTFLOOR', label: 'First Floor', intro: 'Latest editions of First Floor by Shawn Reynaldo.', albums: ALBUMS_FIRSTFLOOR },
+  { id: 'FUTURISM', label: 'Futurism Restated', intro: 'Latest editions of Futurism Restated by Philip Sherburne.', albums: ALBUMS_FUTURISM }
 ];
 
 const HIGHLIGHT_COUNT = 8;
@@ -2108,23 +2115,37 @@ function monthLabel(dateStr) {
   return `${MONTH_LONG[mi]} ${parts[1] || ''}`.trim();
 }
 
+function coverSrc(url) {
+  if (!url) return '';
+  if (url.indexOf('aquariumdrunkard.com') !== -1) {
+    return 'https://images.weserv.nl/?url=' + encodeURIComponent(url.replace(/^https?:\/\//, '')) + '&w=400';
+  }
+  return url;
+}
+
 function cardHtml(a) {
   const title = a.artist
     ? `${escapeHtml(a.artist)} / ${escapeHtml(a.album)}`
     : escapeHtml(a.album || a.title || '');
   const alt = ((a.artist || '') + ' ' + (a.album || a.title || '')).trim();
-  const cover = a.cover ? `<img src="${escapeHtml(a.cover)}" alt="${escapeHtml(alt)}" loading="lazy">` : '';
+  const src = coverSrc(a.cover);
+  const cover = src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.style.display='none';var p=this.closest('.cover-link');if(p)p.classList.add('no-cover')">` : '';
+  const coverClass = src ? 'cover-link' : 'cover-link no-cover';
   const coverHref = a.bandcamp || a.url || '#';
   const artist = a.artist || '';
   const album = a.album || a.title || '';
   const links = [];
+  if (a.post) {
+    if (a.url) links.push(`<a class="link" href="${escapeHtml(a.url)}" target="_blank" rel="noopener">Read <span class="arrow">↗︎</span></a>`);
+  } else {
   if (a.bandcamp) links.push(`<a class="link" href="${escapeHtml(a.bandcamp)}" target="_blank" rel="noopener">${IC_BANDCAMP}Bandcamp</a>`);
   if (a.url) links.push(`<a class="link" href="${escapeHtml(a.url)}" target="_blank" rel="noopener">Source <span class="arrow">↗︎</span></a>`);
   links.push(`<a class="link" href="${escapeHtml(a.spotify || searchUrl('https://open.spotify.com/search/', artist, album))}" target="_blank" rel="noopener">${IC_SPOTIFY}Spotify</a>`);
   links.push(`<a class="link" href="${escapeHtml(a.apple || searchUrl('https://music.apple.com/search?term=', artist, album))}" target="_blank" rel="noopener">${IC_APPLE}Apple Music</a>`);
+  }
   return `
     <article class="album">
-      <a class="cover-link" href="${escapeHtml(coverHref)}" target="_blank" rel="noopener" aria-label="${escapeHtml(alt)}">${cover}</a>
+      <a class="${coverClass}" href="${escapeHtml(coverHref)}" target="_blank" rel="noopener" aria-label="${escapeHtml(alt)}">${cover}</a>
       <div class="info">
         <div class="title-line">${title}</div>
         <div class="meta">${escapeHtml(a.date || '')}</div>

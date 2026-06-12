@@ -183,6 +183,12 @@ function stripHtml(s) {
   return decodeEntities(String(s || '').replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
 }
 
+function snippet(text, max) {
+  let s = String(text || '').trim();
+  if (s.length <= max) return s;
+  return s.slice(0, max).replace(/\s+\S*$/, '') + '…';
+}
+
 async function fetchADPosts(sinceISO) {
   const posts = [];
   for (let page = 1; page <= MAX_PAGES; page++) {
@@ -219,9 +225,9 @@ function parseADPost(post) {
 
   if (!cover && !spotify && !apple && !bandcamp) return null; // skip text-only non-album posts
 
-  const note = stripHtml((post.excerpt && post.excerpt.rendered) || '')
-    .replace(/\s*\[?\s*…\s*\]?\s*$/, '')
-    .slice(0, 320);
+  let note = stripHtml((post.excerpt && post.excerpt.rendered) || '').replace(/\s*\[?\s*…\s*\]?\s*$/, '');
+  if (!note) note = stripHtml(content);
+  note = snippet(note, 300);
 
   const out = { artist, album, note, cover, date: formatDate(post.date), url: post.link || '' };
   if (spotify) out.spotify = spotify;
@@ -279,6 +285,49 @@ async function buildLineOfBestFit() {
   return albums;
 }
 
+// ---- Substack newsletters (one card per edition) ----
+const SUBSTACK_PAGE = 50;
+
+async function fetchSubstackArchive(subdomain) {
+  const out = [];
+  for (let offset = 0; offset < SUBSTACK_PAGE * 6; offset += SUBSTACK_PAGE) {
+    const url = `https://${subdomain}.substack.com/api/v1/archive?sort=new&limit=${SUBSTACK_PAGE}&offset=${offset}`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'newmusic-feed/1.0', 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error(`Substack ${subdomain} ${res.status}`);
+    const batch = await res.json();
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    out.push(...batch);
+    const last = batch[batch.length - 1];
+    if (batch.length < SUBSTACK_PAGE) break;
+    if (last && last.post_date && new Date(last.post_date) < SINCE) break;
+  }
+  return out;
+}
+
+async function buildSubstack(subdomain) {
+  const posts = await fetchSubstackArchive(subdomain);
+  console.log(`  ${posts.length} posts scanned`);
+  const seen = new Set();
+  const albums = [];
+  for (const p of posts) {
+    if (p.post_date && new Date(p.post_date) < SINCE) continue;
+    if (p.type && p.type !== 'newsletter') continue;
+    const title = stripHtml(p.title || '').trim();
+    const url = String(p.canonical_url || '').split('?')[0];
+    if (!title || !url || seen.has(url)) continue;
+    seen.add(url);
+    albums.push({
+      post: true,
+      album: title,
+      note: snippet(stripHtml(p.subtitle || p.description || ''), 300),
+      cover: p.cover_image || '',
+      date: formatDate(p.post_date),
+      url
+    });
+  }
+  return albums;
+}
+
 async function main() {
   let template = await readFile(HTML_FILE, 'utf-8');
   let changed = false;
@@ -304,6 +353,20 @@ async function main() {
     if (albums.length) { template = replaceArray(template, 'LOBF', albums); changed = true; console.log(`  ${albums.length} albums`); }
     else console.log('  no albums found, leaving unchanged');
   } catch (e) { console.error('line of best fit failed:', e.message); }
+
+  try {
+    console.log('first floor: fetching Substack archive...');
+    const albums = await buildSubstack('firstfloor');
+    if (albums.length) { template = replaceArray(template, 'FIRSTFLOOR', albums); changed = true; console.log(`  ${albums.length} editions`); }
+    else console.log('  none found, leaving unchanged');
+  } catch (e) { console.error('first floor failed:', e.message); }
+
+  try {
+    console.log('futurism restated: fetching Substack archive...');
+    const albums = await buildSubstack('futurismrestated');
+    if (albums.length) { template = replaceArray(template, 'FUTURISM', albums); changed = true; console.log(`  ${albums.length} editions`); }
+    else console.log('  none found, leaving unchanged');
+  } catch (e) { console.error('futurism restated failed:', e.message); }
 
   if (!changed) { console.log('\nNo changes.'); return; }
   template = setUpdated(template);
