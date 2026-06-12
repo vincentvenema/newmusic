@@ -68,7 +68,7 @@
     transform: translateY(4px);
     animation: rise 0.4s ease-out forwards;
     display: grid;
-    grid-template-columns: 166px 1fr;
+    grid-template-columns: 191px 1fr;
     gap: 28px;
     align-items: start;
   }
@@ -84,15 +84,15 @@
   @keyframes rise { to { opacity: 1; transform: translateY(0); } }
 
   .cover-link {
-    display: block; width: 166px; height: 166px;
+    display: block; width: 191px; height: 191px;
     background: var(--placeholder); position: relative; overflow: hidden;
     transition: opacity 0.15s;
   }
   .cover-link:hover { opacity: 0.85; }
   .cover-link img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-  .info { padding-top: 4px; }
-  .title-line { font-size: 16px; font-weight: 500; margin-bottom: 2px; letter-spacing: -0.005em; }
+  .info { padding-top: 4px; min-width: 0; }
+  .title-line { font-size: 16px; font-weight: 500; margin-bottom: 2px; letter-spacing: -0.005em; overflow-wrap: anywhere; }
   .meta {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
     font-size: 13px; color: var(--soft); margin-bottom: 14px; letter-spacing: -0.01em;
@@ -120,6 +120,8 @@
     margin: 40px 0 8px; letter-spacing: -0.005em;
   }
 
+  #more { text-align: center; }
+
   .view-more {
     appearance: none; background: none; border: 1px solid var(--rule); border-radius: 2px;
     padding: 12px 20px; margin-top: 40px; cursor: pointer;
@@ -140,8 +142,8 @@
 
   @media (max-width: 600px) {
     body { padding: 40px 20px 64px; }
-    .album { grid-template-columns: 110px 1fr; gap: 20px; padding: 24px 0; }
-    .cover-link { width: 110px; height: 110px; }
+    .album { grid-template-columns: 127px 1fr; gap: 20px; padding: 24px 0; }
+    .cover-link { width: 127px; height: 127px; }
     .links { gap: 16px; }
     .tabs { gap: 16px; }
   }
@@ -151,11 +153,11 @@
 <div class="wrap">
 
   <header>
-    <h1><a href="https://vincentvenema.com/newmusic/">new music</a></h1>
-    <p class="intro" id="intro"></p>
+    <h1><a href="https://vincentvenema.com/newmusic/">NEW MUSIC from</a></h1>
   </header>
 
   <nav class="tabs" id="tabs"></nav>
+  <p class="intro" id="intro"></p>
 
   <div class="section-title">Recent picks</div>
   <main class="feed" id="feed"></main>
@@ -165,13 +167,7 @@
   <div id="more"></div>
 
   <footer>
-    <a href="https://x.com/funkentechno" target="_blank" rel="noopener">funkentechno</a>
-    <span class="dot">·</span>
-    <a href="https://www.thelineofbestfit.com/albums" target="_blank" rel="noopener">Line of Best Fit</a>
-    <span class="dot">·</span>
-    <a href="https://firstfloor.substack.com" target="_blank" rel="noopener">First Floor</a>
-    <span class="dot">·</span>
-    <a href="https://futurismrestated.substack.com" target="_blank" rel="noopener">Futurism Restated</a>
+    <a href="https://vincent.works" target="_blank" rel="noopener">vincent.works</a>
   </footer>
 
 </div>

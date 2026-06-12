@@ -16,8 +16,8 @@ const HTML_FILE = 'index.html';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function fetchAuthorFeedPage(cursor) {
-  let url = `${BSKY_API}?actor=${HANDLE}&limit=${PAGE_LIMIT}&filter=posts_no_replies`;
+async function fetchAuthorFeedPage(actor, cursor) {
+  let url = `${BSKY_API}?actor=${encodeURIComponent(actor)}&limit=${PAGE_LIMIT}&filter=posts_no_replies`;
   if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Bluesky API ${res.status}`);
@@ -25,11 +25,11 @@ async function fetchAuthorFeedPage(cursor) {
 }
 
 // Page back through the feed (newest first) until we pass the cutoff date.
-async function fetchPostsSince(cutoff) {
+async function fetchPostsSince(actor, cutoff) {
   const posts = [];
   let cursor;
   for (let page = 0; page < MAX_PAGES; page++) {
-    const data = await fetchAuthorFeedPage(cursor);
+    const data = await fetchAuthorFeedPage(actor, cursor);
     const batch = (data.feed || []).map((item) => item.post);
     posts.push(...batch);
     cursor = data.cursor;
@@ -134,7 +134,7 @@ function replaceArray(template, key, albums) {
 
 // ---- funkentechno (Bluesky) ----
 async function buildFunkentechno(existing) {
-  const posts = await fetchPostsSince(SINCE);
+  const posts = await fetchPostsSince(HANDLE, SINCE);
   const byUrl = new Map((existing || []).map((a) => [normalizeUrl(a.bandcamp), a]));
   const seen = new Set();
   const albums = [];
@@ -197,9 +197,11 @@ function parseADPost(post) {
   const spotify = (content.match(/https:\/\/open\.spotify\.com\/album\/[A-Za-z0-9]+/) || [])[0] || '';
   const apple = (content.match(/https:\/\/music\.apple\.com\/[a-z]{2}\/album\/[^"'\s)]+/) || [])[0] || '';
   const bandcamp = (content.match(/https:\/\/[\w-]+\.bandcamp\.com\/album\/[^"'\s)]+/) || [])[0] || '';
-  if (!spotify && !apple && !bandcamp) return null;           // not an album review
-
   const title = stripHtml((post.title && post.title.rendered) || '');
+  const lower = title.toLowerCase();
+  const EXCLUDE = ['aquarium drunkard show', 'book club', 'lagniappe', 'transmissions', 'all one song', 'videodrome', 'yesternow', 'picture show', 'mixtape', 'sirius', 'decade', 'interview', 'playlist', ' radio'];
+  if (EXCLUDE.some((w) => lower.includes(w))) return null;    // not an album review
+
   const parts = title.split(/\s*::\s*/);
   if (parts.length < 2) return null;                          // not the "Artist :: Album" format
   const artist = parts[0].trim();
@@ -208,6 +210,8 @@ function parseADPost(post) {
 
   let cover = '';
   try { cover = post._embedded['wp:featuredmedia'][0].source_url || ''; } catch (e) { cover = ''; }
+
+  if (!cover && !spotify && !apple && !bandcamp) return null; // skip text-only non-album posts
 
   const note = stripHtml((post.excerpt && post.excerpt.rendered) || '')
     .replace(/\s*\[?\s*…\s*\]?\s*$/, '')
@@ -222,6 +226,7 @@ function parseADPost(post) {
 
 async function buildAquariumDrunkard() {
   const posts = await fetchADPosts(SINCE.toISOString());
+  console.log(`  ${posts.length} posts scanned`);
   const seen = new Set();
   const albums = [];
   for (const post of posts) {
@@ -236,6 +241,38 @@ async function buildAquariumDrunkard() {
 }
 
 // ---- orchestrate all sources, write index.html once ----
+// ---- The Line of Best Fit (Bluesky link posts) ----
+async function buildLineOfBestFit() {
+  const posts = await fetchPostsSince('thelineofbestfit.com', SINCE);
+  const seen = new Set();
+  const albums = [];
+  for (const post of posts) {
+    const created = post?.record?.createdAt ? new Date(post.record.createdAt) : null;
+    if (!created || created < SINCE) continue;
+    const ext = (post.embed && post.embed.external) || (post.record && post.record.embed && post.record.embed.external);
+    if (!ext || !ext.uri) continue;
+    const title = String(ext.title || '').trim();
+    const isAlbum = ext.uri.includes('/albums/') || /:\s.+\sreview\b/i.test(title);
+    if (!isAlbum) continue;
+    const url = ext.uri.split('?')[0];
+    if (seen.has(url)) continue;
+    seen.add(url);
+    let artist = '';
+    let album = title;
+    const m = title.match(/^(.+?):\s*(.+?)\s+review\b/i);
+    if (m) { artist = m[1].trim(); album = m[2].trim(); }
+    albums.push({
+      artist,
+      album,
+      note: String(ext.description || '').slice(0, 320),
+      cover: typeof ext.thumb === 'string' ? ext.thumb : '',
+      date: formatDate(post.record.createdAt),
+      url
+    });
+  }
+  return albums;
+}
+
 async function main() {
   let template = await readFile(HTML_FILE, 'utf-8');
   let changed = false;
@@ -254,6 +291,13 @@ async function main() {
     if (albums.length) { template = replaceArray(template, 'AQUARIUMDRUNKARD', albums); changed = true; console.log(`  ${albums.length} albums`); }
     else console.log('  no albums found, leaving unchanged');
   } catch (e) { console.error('aquarium drunkard failed:', e.message); }
+
+  try {
+    console.log('line of best fit: fetching Bluesky...');
+    const albums = await buildLineOfBestFit();
+    if (albums.length) { template = replaceArray(template, 'LOBF', albums); changed = true; console.log(`  ${albums.length} albums`); }
+    else console.log('  no albums found, leaving unchanged');
+  } catch (e) { console.error('line of best fit failed:', e.message); }
 
   if (!changed) { console.log('\nNo changes.'); return; }
   await writeFile(HTML_FILE, template);
