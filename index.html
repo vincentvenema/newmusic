@@ -9,24 +9,24 @@
 <meta name="author" content="Vincent Venema">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://vincentvenema.com/newmusic/">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="New Music">
 <meta property="og:title" content="New Music 2026 · albums worth your time">
 <meta property="og:description" content="A running feed of new album recommendations, gathered from a handful of trusted music writers and tastemakers. Updated automatically.">
 <meta property="og:url" content="https://vincentvenema.com/newmusic/">
-<meta property="og:image" content="https://vincentvenema.com/newmusic/og-image.png">
+<meta property="og:image" content="https://vincentvenema.com/newmusic/assets/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="New Music, albums worth your time">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="New Music 2026 · albums worth your time">
 <meta name="twitter:description" content="A running feed of new album recommendations, gathered from a handful of trusted music writers and tastemakers. Updated automatically.">
-<meta name="twitter:image" content="https://vincentvenema.com/newmusic/og-image.png">
+<meta name="twitter:image" content="https://vincentvenema.com/newmusic/assets/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f5f5f5;
@@ -37,12 +37,23 @@
     --placeholder: #ebebeb;
   }
 
+  @font-face {
+    font-family: 'ES Peak';
+    src: url('fonts/ESPeak-Regular.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'ES Peak';
+    src: url('fonts/ESPeak-Medium.woff2') format('woff2');
+    font-weight: 500; font-style: normal; font-display: swap;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
     background: var(--bg);
     color: var(--ink);
-    font-family: 'Inter Tight', -apple-system, system-ui, sans-serif;
+    font-family: 'ES Peak', -apple-system, system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -53,16 +64,18 @@
   .wrap { max-width: 720px; margin: 0 auto; }
 
   header { margin-bottom: 32px; }
-  h1 { font-size: 16px; font-weight: 500; margin-bottom: 8px; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(34px, 10.5vw, 86px); font-weight: 500; line-height: 1.05; margin-bottom: 20px; letter-spacing: -0.03em; white-space: nowrap; }
   h1 a {
     color: var(--ink);
-    text-decoration: underline;
-    text-decoration-color: var(--link-underline);
-    text-underline-offset: 3px;
-    text-decoration-thickness: 1px;
+    text-decoration: none;
   }
-  h1 a:hover { text-decoration-color: var(--ink); }
+  h1 a:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
   .intro { font-size: 16px; line-height: 1.5; color: var(--soft); max-width: 520px; }
+  .intro a {
+    color: var(--soft); text-decoration: underline; text-decoration-color: var(--link-underline);
+    text-underline-offset: 3px; text-decoration-thickness: 1px;
+  }
+  .intro a:hover { color: var(--ink); text-decoration-color: var(--ink); }
 
   .tabs { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 8px; padding-bottom: 4px; }
   .tab {
@@ -76,7 +89,7 @@
   .tab:hover { color: var(--ink); }
   .tab.active { color: var(--ink); text-decoration-color: var(--ink); }
 
-  .section-title { font-size: 16px; font-weight: 500; margin-bottom: 32px; margin-top: 56px; }
+  .section-title { font-size: 18px; font-weight: 500; margin-bottom: 32px; margin-top: 56px; }
 
   .feed { display: flex; flex-direction: column; }
 
@@ -118,7 +131,7 @@
   }
 
   .info { padding-top: 4px; min-width: 0; }
-  .title-line { font-size: 16px; font-weight: 500; margin-bottom: 2px; letter-spacing: -0.005em; overflow-wrap: anywhere; }
+  .title-line { font-size: 18px; font-weight: 500; margin-bottom: 2px; letter-spacing: -0.005em; overflow-wrap: anywhere; }
   .meta {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
     font-size: 13px; color: var(--soft); margin-bottom: 14px; letter-spacing: -0.01em;
@@ -193,7 +206,7 @@
   <div id="more"></div>
 
   <footer>
-    <a href="https://vincent.works" target="_blank" rel="noopener">vincent.works</a><span id="updated-wrap" hidden><span class="dot">·</span><span id="updated"></span></span>
+    <a href="https://vincent.works" target="_blank" rel="noopener">vincent.works</a><span class="dot">·</span><a href="https://extraset.ch/typefaces/peak/" target="_blank" rel="noopener">Set in ES Peak</a><span id="updated-wrap" hidden><span class="dot">·</span><span id="updated"></span></span>
   </footer>
 
 </div>
@@ -2094,11 +2107,11 @@ const ALBUMS_FUTURISM = [
 const LAST_UPDATED = "2026-06-12T10:22:55.300Z";
 
 const SOURCES = [
-  { id: 'FUNKENTECHNO', label: 'funkentechno', intro: 'Album mentions from @funkentechno on Bluesky.', albums: ALBUMS_FUNKENTECHNO },
-  { id: 'AQUARIUMDRUNKARD', label: 'Aquarium Drunkard', intro: 'Album reviews from Aquarium Drunkard.', albums: ALBUMS_AQUARIUMDRUNKARD },
-  { id: 'LOBF', label: 'Line of Best Fit', intro: 'Album reviews from The Line of Best Fit.', albums: ALBUMS_LOBF },
-  { id: 'FIRSTFLOOR', label: 'First Floor', intro: 'Latest editions of First Floor by Shawn Reynaldo.', albums: ALBUMS_FIRSTFLOOR },
-  { id: 'FUTURISM', label: 'Futurism Restated', intro: 'Latest editions of Futurism Restated by Philip Sherburne.', albums: ALBUMS_FUTURISM }
+  { id: 'FUNKENTECHNO', label: 'Funkentechno', intro: 'Album mentions from <a href="https://bsky.app/profile/funkentechno.bsky.social" target="_blank" rel="noopener">Funkentechno</a> on Bluesky.', albums: ALBUMS_FUNKENTECHNO },
+  { id: 'AQUARIUMDRUNKARD', label: 'Aquarium Drunkard', intro: 'Album reviews from <a href="https://aquariumdrunkard.com/" target="_blank" rel="noopener">Aquarium Drunkard</a>.', albums: ALBUMS_AQUARIUMDRUNKARD },
+  { id: 'LOBF', label: 'Line of Best Fit', intro: 'Album reviews from <a href="https://www.thelineofbestfit.com/" target="_blank" rel="noopener">The Line of Best Fit</a>.', albums: ALBUMS_LOBF },
+  { id: 'FIRSTFLOOR', label: 'First Floor', intro: 'Recommended releases from <a href="https://firstfloor.substack.com/s/recommended-releases" target="_blank" rel="noopener">First Floor</a> by Shawn Reynaldo.', albums: ALBUMS_FIRSTFLOOR },
+  { id: 'FUTURISM', label: 'Futurism Restated', intro: 'Latest editions of <a href="https://futurismrestated.substack.com/" target="_blank" rel="noopener">Futurism Restated</a> by Philip Sherburne.', albums: ALBUMS_FUTURISM }
 ];
 
 const HIGHLIGHT_COUNT = 8;
@@ -2177,9 +2190,12 @@ function cardHtml(a) {
 function formatUpdated(iso) {
   const d = new Date(iso);
   if (!iso || isNaN(d.getTime())) return '';
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `Updated ${d.getUTCDate()} ${MONTH_LONG[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${hh}:${mm} UTC`;
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Amsterdam', day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(d);
+  const get = (t) => (parts.find((p) => p.type === t) || {}).value || '';
+  return `Updated ${get('day')} ${get('month')} ${get('year')}, ${get('hour')}:${get('minute')} CET`;
 }
 
 function renderTabs() {
@@ -2195,7 +2211,7 @@ function renderTabs() {
 function render() {
   const src = SOURCES.find((s) => s.id === currentId);
   const albums = src.albums || [];
-  document.getElementById('intro').textContent = src.intro;
+  document.getElementById('intro').innerHTML = src.intro;
 
   const highlight = albums.slice(0, HIGHLIGHT_COUNT);
   const archiveAll = albums.slice(HIGHLIGHT_COUNT);

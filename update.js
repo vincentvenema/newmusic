@@ -193,7 +193,7 @@ async function fetchADPosts(sinceISO) {
   const posts = [];
   for (let page = 1; page <= MAX_PAGES; page++) {
     const url = `${AD_API}?per_page=100&_embed=1&orderby=date&order=desc&after=${encodeURIComponent(sinceISO)}&page=${page}`;
-    const res = await fetch(url, { headers: { 'User-Agent': 'NewMusicFeed/1.0' } });
+    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' } });
     if (res.status === 400) break;            // page past the last
     if (!res.ok) throw new Error(`AD API ${res.status}`);
     const batch = await res.json();
@@ -304,7 +304,7 @@ async function fetchSubstackArchive(subdomain) {
   return out;
 }
 
-async function buildSubstack(subdomain) {
+async function buildSubstack(subdomain, opts = {}) {
   const posts = await fetchSubstackArchive(subdomain);
   console.log(`  ${posts.length} posts scanned`);
   const seen = new Set();
@@ -313,12 +313,27 @@ async function buildSubstack(subdomain) {
     if (p.post_date && new Date(p.post_date) < SINCE) continue;
     if (p.type && p.type !== 'newsletter') continue;
     const title = stripHtml(p.title || '').trim();
+    if (!title) continue;
+    if (opts.exclude && opts.exclude.test(title)) continue;   // skip the weekly digests
+    let artist = '';
+    let album = title;
+    let isRelease = false;
+    if (opts.split) {                                         // "Artist - Album" -> artist + album
+      const parts = title.split(/\s+[\u2013\u2014-]\s+/);
+      if (parts.length >= 2) { artist = parts[0].trim(); album = parts.slice(1).join(' \u2013 ').trim(); isRelease = true; }
+    }
+    if (opts.tag) {                                           // or matched by section tag when the API exposes it
+      const tags = Array.isArray(p.postTags) ? p.postTags : [];
+      if (tags.some((t) => String((t && (t.slug || t.name)) || '').toLowerCase().includes(opts.tag))) isRelease = true;
+    }
+    if (opts.releasesOnly && !isRelease) continue;            // keep only individual recommended releases
     const url = String(p.canonical_url || '').split('?')[0];
-    if (!title || !url || seen.has(url)) continue;
+    if (!url || seen.has(url)) continue;
     seen.add(url);
     albums.push({
       post: true,
-      album: title,
+      artist,
+      album,
       note: snippet(stripHtml(p.subtitle || p.description || ''), 300),
       cover: p.cover_image || '',
       date: formatDate(p.post_date),
@@ -356,8 +371,8 @@ async function main() {
 
   try {
     console.log('first floor: fetching Substack archive...');
-    const albums = await buildSubstack('firstfloor');
-    if (albums.length) { template = replaceArray(template, 'FIRSTFLOOR', albums); changed = true; console.log(`  ${albums.length} editions`); }
+    const albums = await buildSubstack('firstfloor', { exclude: /^First Floor\b/i, split: true, tag: 'recommended-releases', releasesOnly: true });
+    if (albums.length) { template = replaceArray(template, 'FIRSTFLOOR', albums); changed = true; console.log(`  ${albums.length} releases`); }
     else console.log('  none found, leaving unchanged');
   } catch (e) { console.error('first floor failed:', e.message); }
 

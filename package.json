@@ -1,1 +1,9 @@
-{ "type": "module" }
+{
+  "name": "newmusic",
+  "private": true,
+  "type": "module",
+  "description": "Auto-updating feed of new album recommendations from a handful of music sources.",
+  "scripts": {
+    "update": "node update.js"
+  }
+}
