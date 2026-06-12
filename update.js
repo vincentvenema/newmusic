@@ -237,19 +237,49 @@ function parseADPost(post) {
   return out;
 }
 
+const normLink = (u) => String(u || '').split('?')[0].split('#')[0].replace(/\/$/, '').toLowerCase();
+
+function cleanADNote(text) {
+  return String(text || '')
+    .replace(/\bcontinue reading\b.*$/i, '')
+    .replace(/the post .*? appeared first on .*$/i, '')
+    .replace(/\s*\[(?:\u2026|\.\.\.)\]\s*$/, '')
+    .replace(/\s*(?:read more|\u2192)\s*$/i, '')
+    .trim();
+}
+
+// AD's RSS feed carries the write-ups the REST API leaves empty. Build a link -> note map.
+async function fetchADNotes() {
+  const map = new Map();
+  try {
+    const xml = await fetchFeedXml('https://aquariumdrunkard.com/feed/');
+    const items = parseRssItems(xml);
+    for (const it of items) {
+      const note = cleanADNote(stripHtml(it.description || it.content || ''));
+      if (it.link && note) map.set(normLink(it.link), note);
+    }
+    console.log(`  AD feed: ${map.size} write-ups available`);
+  } catch (e) { console.error('  AD feed fetch failed:', e.message); }
+  return map;
+}
+
 async function buildAquariumDrunkard() {
   const posts = await fetchADPosts(SINCE.toISOString());
   console.log(`  ${posts.length} posts scanned`);
+  const notes = await fetchADNotes();
   const seen = new Set();
   const albums = [];
+  let filled = 0;
   for (const post of posts) {
     const a = parseADPost(post);
     if (!a) continue;
     const key = (a.url || a.spotify || a.apple).split('?')[0];
     if (seen.has(key)) continue;
     seen.add(key);
+    if (!a.note) { const n = notes.get(normLink(a.url)); if (n) { a.note = snippet(n, 300); filled++; } }
     albums.push(a);
   }
+  console.log(`  ${filled} notes filled from RSS`);
   return albums;
 }
 
@@ -286,61 +316,80 @@ async function buildLineOfBestFit() {
   return albums;
 }
 
-// ---- Substack newsletters (one card per edition) ----
-const SUBSTACK_PAGE = 50;
-
+// ---- Substack newsletters (via RSS; the JSON archive API blocks datacenter IPs) ----
 const SUBSTACK_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-// Substack's JSON API blocks datacenter IPs (e.g. GitHub Actions runners). Try the
-// direct request first, then fall back through read-only proxies that fetch from a
-// non-blocked IP and hand back the body verbatim.
+// RSS is served where the JSON API is blocked. Try direct first, then fall back through
+// read-only proxies that fetch from a non-blocked IP and hand back the body verbatim.
 function substackFetchers(url) {
   return [
     url,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-    `https://r.jina.ai/${url}`,
   ];
 }
 
-async function fetchSubstackJson(url) {
+async function fetchFeedXml(url) {
   let lastErr;
   for (const u of substackFetchers(url)) {
     try {
-      const res = await fetch(u, { headers: { 'User-Agent': SUBSTACK_UA, 'Accept': 'application/json' } });
+      const res = await fetch(u, { headers: { 'User-Agent': SUBSTACK_UA, 'Accept': 'application/rss+xml, application/xml, text/xml, */*' } });
       if (!res.ok) { lastErr = new Error(`${res.status}`); continue; }
-      const data = JSON.parse(await res.text());
-      if (Array.isArray(data)) return data;
-      lastErr = new Error('non-array body');
+      const text = await res.text();
+      if (text && text.indexOf('<item') !== -1) return text;
+      lastErr = new Error(`no items (head: ${text.slice(0, 80).replace(/\s+/g, ' ')})`);
     } catch (e) { lastErr = e; }
   }
   throw lastErr || new Error('all fetchers failed');
 }
 
-async function fetchSubstackArchive(subdomain) {
-  const out = [];
-  for (let offset = 0; offset < SUBSTACK_PAGE * 6; offset += SUBSTACK_PAGE) {
-    const url = `https://${subdomain}.substack.com/api/v1/archive?sort=new&limit=${SUBSTACK_PAGE}&offset=${offset}`;
-    const batch = await fetchSubstackJson(url);
-    if (!Array.isArray(batch) || batch.length === 0) break;
-    out.push(...batch);
-    const last = batch[batch.length - 1];
-    if (batch.length < SUBSTACK_PAGE) break;
-    if (last && last.post_date && new Date(last.post_date) < SINCE) break;
+async function fetchSubstackFeed(subdomain) {
+  return fetchFeedXml(`https://${subdomain}.substack.com/feed`);
+}
+
+function rssTag(block, name) {
+  const m = block.match(new RegExp('<' + name + '\\b[^>]*>([\\s\\S]*?)<\\/' + name + '>'));
+  if (!m) return '';
+  return m[1].replace(/^<!\[CDATA\[/, '').replace(/\]\]>$/, '').trim();
+}
+
+function parseRssItems(xml) {
+  const items = [];
+  const blocks = xml.match(/<item\b[\s\S]*?<\/item>/g) || [];
+  for (const b of blocks) {
+    const enclosure = (b.match(/<enclosure[^>]*\burl="([^"]+)"/) || [])[1] || '';
+    const contentEncoded = rssTag(b, 'content:encoded');
+    const imgInContent = (contentEncoded.match(/<img[^>]*\bsrc="([^"]+)"/) || [])[1] || '';
+    const cats = [];
+    const catRe = /<category\b[^>]*>([\s\S]*?)<\/category>/g;
+    let cm;
+    while ((cm = catRe.exec(b))) cats.push(cm[1].replace(/^<!\[CDATA\[/, '').replace(/\]\]>$/, '').trim());
+    items.push({
+      title: rssTag(b, 'title'),
+      link: rssTag(b, 'link'),
+      pubDate: rssTag(b, 'pubDate'),
+      description: rssTag(b, 'description') || contentEncoded,
+      content: contentEncoded,
+      cover: enclosure || imgInContent,
+      categories: cats,
+    });
   }
-  return out;
+  return items;
 }
 
 async function buildSubstack(subdomain, opts = {}) {
-  const posts = await fetchSubstackArchive(subdomain);
-  console.log(`  ${posts.length} posts scanned`);
+  const xml = await fetchSubstackFeed(subdomain);
+  const items = parseRssItems(xml);
+  console.log(`  ${items.length} posts scanned`);
   const seen = new Set();
   const albums = [];
-  for (const p of posts) {
-    if (p.post_date && new Date(p.post_date) < SINCE) continue;
-    if (p.type && p.type !== 'newsletter') continue;
-    const title = stripHtml(p.title || '').trim();
+  for (const it of items) {
+    const when = it.pubDate ? new Date(it.pubDate) : null;
+    if (when && !isNaN(when) && when < SINCE) continue;
+    const title = stripHtml(it.title).trim();
     if (!title) continue;
+    console.log(`    - ${title}`);                            // log every title so the filter can be tuned
+    if (opts.include && !opts.include.test(title)) continue;  // keep only editions matching the pattern (e.g. "FR 173:")
     if (opts.exclude && opts.exclude.test(title)) continue;   // skip the weekly digests
     let artist = '';
     let album = title;
@@ -349,23 +398,96 @@ async function buildSubstack(subdomain, opts = {}) {
       const parts = title.split(/\s+[\u2013\u2014-]\s+/);
       if (parts.length >= 2) { artist = parts[0].trim(); album = parts.slice(1).join(' \u2013 ').trim(); isRelease = true; }
     }
-    if (opts.tag) {                                           // or matched by section tag when the API exposes it
-      const tags = Array.isArray(p.postTags) ? p.postTags : [];
-      if (tags.some((t) => String((t && (t.slug || t.name)) || '').toLowerCase().includes(opts.tag))) isRelease = true;
+    if (opts.tag) {                                           // or matched by a feed category
+      const cats = (it.categories || []).map((c) => c.toLowerCase());
+      if (cats.some((c) => c.includes(opts.tag))) isRelease = true;
     }
     if (opts.releasesOnly && !isRelease) continue;            // keep only individual recommended releases
-    const url = String(p.canonical_url || '').split('?')[0];
+    const url = String(it.link || '').split('?')[0];
     if (!url || seen.has(url)) continue;
     seen.add(url);
     albums.push({
       post: true,
       artist,
       album,
-      note: snippet(stripHtml(p.subtitle || p.description || ''), 300),
-      cover: p.cover_image || '',
-      date: formatDate(p.post_date),
-      url
+      note: snippet(stripHtml(it.description), 300),
+      cover: it.cover || '',
+      date: formatDate(when && !isNaN(when) ? when.toISOString() : ''),
+      url,
     });
+  }
+  return albums;
+}
+
+// ---- Futurism Restated: split each weekly FR edition into individual album picks ----
+async function resolveBandcampCover(albumId) {
+  const url = `https://bandcamp.com/EmbeddedPlayer/album=${albumId}/`;
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FunkentechnoFeed/1.0)' } });
+    if (!res.ok) return {};
+    const html = await res.text();
+    const meta = (p) => (html.match(new RegExp('<meta property="og:' + p + '" content="([^"]+)"', 'i')) || [])[1] || '';
+    return { cover: meta('image'), bandcamp: meta('url') };
+  } catch (e) { return {}; }
+}
+
+function futurismPicks(contentHtml) {
+  const picks = [];
+  const paras = contentHtml.match(/<p\b[\s\S]*?<\/p>/gi) || [];
+  let current = null;
+  const flush = () => { if (current) { picks.push(current); current = null; } };
+  for (const p of paras) {
+    const text = stripHtml(p);
+    const m = text.match(/^([^:]{1,80}):\s+(.+?)\s+\(([^()]{1,40})\)\s*$/);
+    const hasItalicAlbum = /<em\b/i.test(p);
+    if (m && hasItalicAlbum) {                                // a pick header: "Artist: Album (Label)"
+      flush();
+      current = { artist: m[1].trim(), album: m[2].trim(), label: m[3].trim(), note: '', id: '' };
+      const idm = p.match(/album=(\d+)/);
+      if (idm) current.id = idm[1];
+      continue;
+    }
+    if (current) {                                            // following prose / embed belongs to the current pick
+      const idm = p.match(/album=(\d+)/);
+      if (idm && !current.id) current.id = idm[1];
+      if (text) current.note = current.note ? (current.note + ' ' + text) : text;
+    }
+  }
+  flush();
+  return picks;
+}
+
+async function buildFuturismAlbums() {
+  const xml = await fetchSubstackFeed('futurismrestated');
+  const items = parseRssItems(xml);
+  const editions = items.filter((it) => /^FR\s*\d+\s*:/i.test(stripHtml(it.title)));
+  console.log(`  ${editions.length} FR editions in feed`);
+  const seen = new Set();
+  const albums = [];
+  const CAP = 80;
+  for (const ed of editions) {
+    const when = ed.pubDate ? new Date(ed.pubDate) : null;
+    if (when && !isNaN(when) && when < SINCE) continue;
+    const edUrl = String(ed.link || '').split('?')[0];
+    const edDate = formatDate(when && !isNaN(when) ? when.toISOString() : '');
+    const picks = futurismPicks(ed.content || '');
+    console.log(`    ${stripHtml(ed.title)} -> ${picks.length} picks`);
+    for (const pk of picks) {
+      if (albums.length >= CAP) break;
+      const key = (pk.artist + ' - ' + pk.album).toLowerCase();
+      if (!pk.artist || !pk.album || seen.has(key)) continue;
+      seen.add(key);
+      let cover = '';
+      let bandcamp = '';
+      if (pk.id) {
+        await sleep(300);
+        const meta = await resolveBandcampCover(pk.id);
+        cover = meta.cover || '';
+        bandcamp = meta.bandcamp || '';
+      }
+      console.log(`      - ${pk.artist} \u2014 ${pk.album}${cover ? ' [cover]' : ''}`);
+      albums.push({ artist: pk.artist, album: pk.album, note: snippet(pk.note, 300), cover, bandcamp, date: edDate, url: edUrl });
+    }
   }
   return albums;
 }
@@ -397,16 +519,16 @@ async function main() {
   } catch (e) { console.error('line of best fit failed:', e.message); }
 
   try {
-    console.log('first floor: fetching Substack archive...');
+    console.log('first floor: fetching RSS feed...');
     const albums = await buildSubstack('firstfloor', { exclude: /^First Floor\b/i, split: true, tag: 'recommended-releases', releasesOnly: true });
     if (albums.length) { template = replaceArray(template, 'FIRSTFLOOR', albums); changed = true; console.log(`  ${albums.length} releases`); }
     else console.log('  none found, leaving unchanged');
   } catch (e) { console.error('first floor failed:', e.message); }
 
   try {
-    console.log('futurism restated: fetching Substack archive...');
-    const albums = await buildSubstack('futurismrestated');
-    if (albums.length) { template = replaceArray(template, 'FUTURISM', albums); changed = true; console.log(`  ${albums.length} editions`); }
+    console.log('futurism restated: fetching RSS feed...');
+    const albums = await buildFuturismAlbums();
+    if (albums.length) { template = replaceArray(template, 'FUTURISM', albums); changed = true; console.log(`  ${albums.length} albums`); }
     else console.log('  none found, leaving unchanged');
   } catch (e) { console.error('futurism restated failed:', e.message); }
 
