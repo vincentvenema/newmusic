@@ -34,9 +34,10 @@ jobs:
 
       - name: Stage site
         run: |
-          mkdir -p dist
+          mkdir -p dist/assets dist/fonts
           cp index.html dist/
-          cp favicon.svg apple-touch-icon.png og-image.png dist/ 2>/dev/null || true
+          cp assets/* dist/assets/ 2>/dev/null || true
+          cp fonts/* dist/fonts/ 2>/dev/null || true
 
       - name: Deploy to Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
