@@ -36,6 +36,7 @@ jobs:
         run: |
           mkdir -p dist/assets dist/fonts
           cp index.html dist/
+          cp feedproxy.php dist/ 2>/dev/null || true
           cp assets/* dist/assets/ 2>/dev/null || true
           cp fonts/* dist/fonts/ 2>/dev/null || true
 
