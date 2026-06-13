@@ -62,7 +62,7 @@ function extractBandcampUrl(post) {
   return match ? match[0] : null;
 }
 
-function extractNote(text, artist, album, maxLen = 320) {
+function extractNote(text, artist, album, maxLen = 600) {
   let clean = (text || '').replace(/https?:\/\/\S+/g, '').trim();
 
   // If the post starts with "Artist - Album" or similar, strip that off
@@ -228,7 +228,7 @@ function parseADPost(post) {
   let note = stripHtml((post.excerpt && post.excerpt.rendered) || '').replace(/\s*\[?\s*…\s*\]?\s*$/, '');
   if (!note) { const y = post.yoast_head_json || {}; note = stripHtml(y.og_description || y.description || ''); }
   if (!note) note = stripHtml(content);
-  note = snippet(note, 300);
+  note = snippet(note, 600);
 
   const out = { artist, album, note, cover, date: formatDate(post.date), url: post.link || '' };
   if (spotify) out.spotify = spotify;
@@ -283,7 +283,7 @@ async function buildAquariumDrunkard() {
     seen.add(key);
     const ex = extras.get(normLink(a.url));
     if (ex) {
-      if (!a.note && ex.note) { a.note = snippet(ex.note, 300); filled++; }
+      if (!a.note && ex.note) { a.note = snippet(ex.note, 600); filled++; }
       if (!a.bandcamp && ex.bandcamp) { a.bandcamp = ex.bandcamp; bcFilled++; }
       else if (!a.bandcamp && ex.bcId) {
         await sleep(300);
@@ -322,7 +322,7 @@ async function buildLineOfBestFit() {
     albums.push({
       artist,
       album,
-      note: String(ext.description || '').slice(0, 320),
+      note: String(ext.description || '').slice(0, 600),
       cover: typeof ext.thumb === 'string' ? ext.thumb : '',
       date: formatDate(post.record.createdAt),
       url
@@ -349,13 +349,18 @@ function substackFetchers(url) {
 async function fetchFeedXml(url) {
   let lastErr;
   for (const u of substackFetchers(url)) {
+    const via = u.includes('feedproxy.php') ? 'hostinger'
+      : u.includes('codetabs') ? 'codetabs'
+      : u.includes('allorigins') ? 'allorigins'
+      : u.includes('corsproxy') ? 'corsproxy' : 'direct';
     try {
       const res = await fetch(u, { headers: { 'User-Agent': SUBSTACK_UA, 'Accept': 'application/rss+xml, application/xml, text/xml, */*' } });
-      if (!res.ok) { lastErr = new Error(`${res.status}`); continue; }
+      if (!res.ok) { console.log(`    ${via}: HTTP ${res.status}`); lastErr = new Error(`${res.status}`); continue; }
       const text = await res.text();
-      if (text && text.indexOf('<item') !== -1) return text;
-      lastErr = new Error(`no items (head: ${text.slice(0, 80).replace(/\s+/g, ' ')})`);
-    } catch (e) { lastErr = e; }
+      if (text && text.indexOf('<item') !== -1) { console.log(`    ${via}: ok`); return text; }
+      console.log(`    ${via}: no items (head: ${text.slice(0, 60).replace(/\s+/g, ' ')})`);
+      lastErr = new Error('no items');
+    } catch (e) { console.log(`    ${via}: ${e.message}`); lastErr = e; }
   }
   throw lastErr || new Error('all fetchers failed');
 }
@@ -427,7 +432,7 @@ async function buildSubstack(subdomain, opts = {}) {
       post: true,
       artist,
       album,
-      note: snippet(stripHtml(it.description), 300),
+      note: snippet(stripHtml(it.description), 600),
       cover: it.cover || '',
       date: formatDate(when && !isNaN(when) ? when.toISOString() : ''),
       url,
@@ -503,7 +508,7 @@ async function buildFuturismAlbums() {
         bandcamp = meta.bandcamp || '';
       }
       console.log(`      - ${pk.artist} \u2014 ${pk.album}${cover ? ' [cover]' : ''}`);
-      albums.push({ artist: pk.artist, album: pk.album, note: snippet(pk.note, 300), cover, bandcamp, date: edDate, url: edUrl });
+      albums.push({ artist: pk.artist, album: pk.album, note: snippet(pk.note, 600), cover, bandcamp, date: edDate, url: edUrl });
     }
   }
   return albums;
@@ -541,7 +546,7 @@ async function buildInSheeps() {
     albums.push({
       post: true,
       album: title,
-      note: snippet(cleanADNote(stripHtml(it.description || it.content || '')), 300),
+      note: snippet(cleanADNote(stripHtml(it.description || it.content || '')), 600),
       cover: it.cover || '',
       date: formatDate(when && !isNaN(when) ? when.toISOString() : ''),
       url,

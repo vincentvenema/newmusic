@@ -179,16 +179,23 @@
     padding: 40px 24px; overflow-y: auto; cursor: zoom-out;
   }
   .lightbox[hidden] { display: none; }
-  .lb-inner { display: flex; flex-direction: column; align-items: center; gap: 22px; width: 100%; max-width: 460px; }
-  .lb-cover-wrap { width: 100%; display: flex; justify-content: center; }
-  .lb-cover { width: 100%; max-width: 420px; height: auto; display: block; cursor: zoom-out; }
-  .lb-nocover { display: flex; width: 100%; max-width: 420px; aspect-ratio: 1 / 1;
+  .lb-inner { display: flex; flex-direction: row; align-items: flex-start; gap: 36px; width: 100%; max-width: 980px; }
+  .lb-cover-wrap { flex: 0 0 50%; max-width: 520px; display: flex; justify-content: center; }
+  .lb-cover { width: 100%; max-width: 520px; height: auto; display: block; cursor: zoom-out; }
+  .lb-nocover { display: flex; width: 100%; max-width: 520px; aspect-ratio: 1 / 1;
     align-items: center; justify-content: center; background: var(--placeholder); color: var(--soft); font-size: 12px; letter-spacing: -0.01em; }
-  .lb-info { text-align: center; max-width: 460px; }
-  .lb-title { font-size: 20px; font-weight: 500; color: var(--ink); margin-bottom: 4px; letter-spacing: -0.005em; }
+  .lb-info { flex: 1; min-width: 0; text-align: left; }
+  .lb-title { font-size: 22px; font-weight: 500; color: var(--ink); margin-bottom: 4px; letter-spacing: -0.005em; }
   .lb-meta { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; color: var(--soft); margin-bottom: 14px; letter-spacing: -0.01em; }
   .lb-note { font-size: 16px; line-height: 1.5; color: var(--ink); margin-bottom: 20px; }
-  .lb-links { justify-content: center; cursor: auto; }
+  .lb-links { justify-content: flex-start; cursor: auto; }
+  @media (max-width: 760px) {
+    .lb-inner { flex-direction: column; align-items: center; gap: 22px; max-width: 460px; }
+    .lb-cover-wrap { flex: none; width: 100%; max-width: 420px; }
+    .lb-cover, .lb-nocover { max-width: 420px; }
+    .lb-info { text-align: center; }
+    .lb-links { justify-content: center; }
+  }
 
   footer { margin-top: 96px; padding-top: 24px; font-size: 14px; color: var(--soft); text-align: center; }
   footer a {
@@ -2139,132 +2146,6 @@ const ALBUMS_LOBF = [
   }
 ];
 const ALBUMS_FIRSTFLOOR = [
-  {
-    "post": true,
-    "artist": "Vardae",
-    "album": "The Energy of Presence",
-    "note": "Samurai",
-    "cover": "https://substackcdn.com/image/fetch/$s_!bbJS!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff661ea29-6a53-454c-8f48-4de985cd259d_1456x1048.jpeg",
-    "date": "Jun 2026",
-    "url": "https://firstfloor.substack.com/p/vardae-the-energy-of-presence"
-  },
-  {
-    "post": true,
-    "artist": "ABADIR",
-    "album": "The Primitivist",
-    "note": "Planet Mu",
-    "cover": "https://substackcdn.com/image/fetch/$s_!zLmk!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F47d02d42-5c07-4fdc-a418-f831b11ec604_1456x1048.jpeg",
-    "date": "Jun 2026",
-    "url": "https://firstfloor.substack.com/p/abadir-the-primitivist"
-  },
-  {
-    "post": true,
-    "artist": "J and the woolen stars",
-    "album": "Puff",
-    "note": "28912 / se Dessaisir Publishing",
-    "cover": "https://substackcdn.com/image/fetch/$s_!4KxI!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa121bbb1-abde-47ac-9e81-4ecb5b727284_1456x1048.jpeg",
-    "date": "Jun 2026",
-    "url": "https://firstfloor.substack.com/p/j-and-the-woolen-stars-puff"
-  },
-  {
-    "post": true,
-    "artist": "Cinna Peyghamy",
-    "album": "Music for Tombak & Synth",
-    "note": "Other People",
-    "cover": "https://substackcdn.com/image/fetch/$s_!CkyJ!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fe33b5921-c1e6-407a-8ddf-8bd17115ba2f_1456x1048.jpeg",
-    "date": "Jun 2026",
-    "url": "https://firstfloor.substack.com/p/cinna-peyghamy-music-for-tombak-and"
-  },
-  {
-    "post": true,
-    "artist": "Beatrice M.",
-    "album": "Sinking",
-    "note": "Tectonic",
-    "cover": "https://substackcdn.com/image/fetch/$s_!TwW5!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F852a1e54-8f99-43df-9ce7-5a425132bc0e_1456x1048.jpeg",
-    "date": "Jun 2026",
-    "url": "https://firstfloor.substack.com/p/beatrice-m-sinking"
-  },
-  {
-    "post": true,
-    "artist": "Spandrel",
-    "album": "Healing Waters",
-    "note": "Spandrel",
-    "cover": "https://substackcdn.com/image/fetch/$s_!IHeV!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F40087a0a-738f-4e68-bebc-feace442d9f7_1456x1048.jpeg",
-    "date": "Jun 2026",
-    "url": "https://firstfloor.substack.com/p/spandrel-healing-waters"
-  },
-  {
-    "post": true,
-    "artist": "Forest Drive West",
-    "album": "Mantis 1920",
-    "note": "Delsin",
-    "cover": "https://substackcdn.com/image/fetch/$s_!YA4m!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F767133d5-7a0e-46a3-b4e2-11d66fb6c501_1456x1048.jpeg",
-    "date": "Jun 2026",
-    "url": "https://firstfloor.substack.com/p/forest-drive-west-mantis-1920"
-  },
-  {
-    "post": true,
-    "artist": "Jake Muir",
-    "album": "Pareidolia",
-    "note": "enmossed",
-    "cover": "https://substackcdn.com/image/fetch/$s_!X2-h!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F223354ef-42f2-479c-9945-ac237915ddae_1456x1048.jpeg",
-    "date": "Jun 2026",
-    "url": "https://firstfloor.substack.com/p/jake-muir-pareidolia"
-  },
-  {
-    "post": true,
-    "artist": "Tara Clerkin Trio",
-    "album": "Somewhere Good",
-    "note": "World of Echo",
-    "cover": "https://substackcdn.com/image/fetch/$s_!gs9x!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F63898b8c-aad2-4bde-a801-e6c57951fe65_1456x1048.jpeg",
-    "date": "Jun 2026",
-    "url": "https://firstfloor.substack.com/p/tara-clerkin-trio-somewhere-good"
-  },
-  {
-    "post": true,
-    "artist": "Supermodel",
-    "album": "Supermodel",
-    "note": "Ecstatic",
-    "cover": "https://substackcdn.com/image/fetch/$s_!7ii3!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb4b7ad54-c564-437b-8273-3e6f6f541db9_1456x1048.jpeg",
-    "date": "May 2026",
-    "url": "https://firstfloor.substack.com/p/supermodel-supermodel"
-  },
-  {
-    "post": true,
-    "artist": "Saapato",
-    "album": "Seasons Turn Like Pages",
-    "note": "Window Sill / Aural Canyon",
-    "cover": "https://substackcdn.com/image/fetch/$s_!txoq!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fad11c705-03e8-4400-98a5-3debd3c4c69d_1456x1048.jpeg",
-    "date": "May 2026",
-    "url": "https://firstfloor.substack.com/p/saapato-seasons-turn-like-pages"
-  },
-  {
-    "post": true,
-    "artist": "Aho Ssan",
-    "album": "The Sun Turned Black",
-    "note": "Subtext",
-    "cover": "https://substackcdn.com/image/fetch/$s_!fgEH!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F58fa8727-e5c1-4c59-931f-b97831c11ce6_1456x1048.jpeg",
-    "date": "May 2026",
-    "url": "https://firstfloor.substack.com/p/aho-ssan-the-sun-turned-black"
-  },
-  {
-    "post": true,
-    "artist": "MJ Guider",
-    "album": "ANOTHER WEIRD DREAM",
-    "note": "Modern Love",
-    "cover": "https://substackcdn.com/image/fetch/$s_!qIf0!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3c7c5fd1-8623-4a28-8ef3-d037bcf02556_1456x1048.jpeg",
-    "date": "May 2026",
-    "url": "https://firstfloor.substack.com/p/mj-guider-another-weird-dream"
-  },
-  {
-    "post": true,
-    "artist": "Peach",
-    "album": "Soak Vol. 1",
-    "note": "Mood Hut",
-    "cover": "https://substackcdn.com/image/fetch/$s_!cnTy!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0de79f61-8739-4771-9f6a-06a6caa1a9df_1456x1048.jpeg",
-    "date": "May 2026",
-    "url": "https://firstfloor.substack.com/p/peach-soak-vol-1"
-  }
 ];
 const ALBUMS_FUTURISM = [
   {
@@ -2549,7 +2430,7 @@ const ALBUMS_INSHEEPS = [
   }
 ];
 
-const LAST_UPDATED = "2026-06-13T02:55:30.874Z";
+const LAST_UPDATED = "2026-06-12T20:42:31.539Z";
 
 const SOURCES = [
   { id: 'FUNKENTECHNO', label: 'Funkentechno', intro: 'Album mentions from <a href="https://bsky.app/profile/funkentechno.bsky.social" target="_blank" rel="noopener">Funkentechno</a> by David James.', albums: ALBUMS_FUNKENTECHNO },
