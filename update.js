@@ -720,7 +720,7 @@ async function buildFirstFloor(known = null) {
   return albums;
 }
 
-async function buildQuietus() {
+async function buildQuietus(known = null) {
   const xml = await fetchFeedXml('https://thequietus.com/columns/quietus-reviews/album-of-the-week/feed/');
   const items = parseRssItems(xml);
   console.log(`  ${items.length} reviews scanned`);
@@ -732,8 +732,12 @@ async function buildQuietus() {
     const url = String(it.link || '').split('?')[0];
     if (!title || !url || seen.has(url)) continue;
     seen.add(url);
+    const k = keyOf({ url, album: title });
+    if (known && known.has(k)) continue;
+    let cover = it.cover || '';
+    if (!cover) { await sleep(300); cover = await resolveSubstackOgImage(url); }
     const when = it.pubDate ? new Date(it.pubDate) : null;
-    out.push({ post: true, album: title, note: snippet(cleanADNote(stripHtml(it.description || it.content || '')), 600), cover: it.cover || '', date: formatDate(when && !isNaN(when) ? when.toISOString() : ''), url });
+    out.push({ post: true, album: title, note: snippet(cleanADNote(stripHtml(it.description || it.content || '')), 600), cover, date: formatDate(when && !isNaN(when) ? when.toISOString() : ''), url });
   }
   return out;
 }
@@ -797,8 +801,8 @@ async function main() {
 
   try {
     console.log('the quietus: fetching RSS feed...');
-    const fresh = await buildQuietus();
     const existing = readArray(template, 'QUIETUS') || [];
+    const fresh = await buildQuietus(new Set(existing.filter((a) => a.cover).map(keyOf)));
     const m = mergeAlbums(existing, fresh);
     if (m.changed) { template = replaceArray(template, 'QUIETUS', m.albums); changed = true; }
     console.log(`  ${m.added} new, ${m.albums.length} total`);
